@@ -22,21 +22,39 @@ struct Position
 {
     horizontal: i32,
     depth: i32,
+    aim: i32,
 }
 
 impl Position {
     fn new() -> Self
     {
-        Position{horizontal: 0, depth: 0}
+        Position{horizontal: 0, depth: 0, aim: 0}
     }
 
     fn update(self: &mut Self, m: Move) -> () 
     {
         use Direction::*;
         match m.direction {
-            UP => {self.depth -= m.stepsize}
-            DOWN => {self.depth += m.stepsize}
-            FORWARD => {self.horizontal += m.stepsize}
+            UP => {self.depth -= m.stepsize;}
+            DOWN => {self.depth += m.stepsize;}
+            FORWARD => {self.horizontal += m.stepsize;}
+        }
+    }
+
+    fn update_aimed(self: &mut Self, m: Move) -> ()
+    {
+        use Direction::*;
+        match m.direction {
+            UP => {
+                self.aim -= m.stepsize;
+            }
+            DOWN => {
+                self.aim += m.stepsize;
+            }
+            FORWARD => {
+                self.horizontal += m.stepsize;
+                self.depth += self.aim*m.stepsize;
+            }
         }
     }
 
@@ -86,6 +104,16 @@ pub fn compute_position() -> i32
     let mut position = Position::new();
     for m in data {
         position.update(m);
+    }
+    position.metric()
+}
+
+pub fn compute_position_aimed() -> i32
+{
+    let data = parse_input(INPUT);
+    let mut position = Position::new();
+    for m in data {
+        position.update_aimed(m);
     }
     position.metric()
 }

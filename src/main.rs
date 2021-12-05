@@ -8,4 +8,6 @@ fn main() {
              puzzle_1::count_sliding_window_increasing_depth());
     println!("Puzzle 2.1: The final posision metric of the sub (horizontal x depth) is {}.",
              puzzle_2::compute_position());
+    println!("Puzzle 2.2: The final posision metric of the sub (horizontal x depth) using the aimed algorthim is {}.",
+             puzzle_2::compute_position_aimed());
 }
