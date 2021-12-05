@@ -11,6 +11,8 @@ fn main() {
              puzzle_2::compute_position());
     println!("Puzzle 2.2: The final posision metric of the sub (horizontal x depth) using the aimed algorthim is {}.",
              puzzle_2::compute_position_aimed());
-    println!("Puzzle 3.1: The power consumption (gamma x epsilon) is {:?}",
+    println!("Puzzle 3.1: The power consumption (gamma x epsilon) is {}",
              puzzle_3::calculate_power_consumption());
+    println!("Puzzle 3.2: The life rating (oxygen x co2 rating) is {}",
+             puzzle_3::calculate_life_rating());
 }
