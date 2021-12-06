@@ -1,6 +1,7 @@
 mod puzzle_1;
 mod puzzle_2;
 mod puzzle_3;
+mod puzzle_4;
 
 fn main() {
     println!("Puzzle 1.1: There are {} instances of increased depth.", 
@@ -15,4 +16,6 @@ fn main() {
              puzzle_3::calculate_power_consumption());
     println!("Puzzle 3.2: The life rating (oxygen x co2 rating) is {}",
              puzzle_3::calculate_life_rating());
+    println!("Puzzle 4.1: The winning bingo board has the score {}",
+             puzzle_4::winning_bingo_score());
 }
