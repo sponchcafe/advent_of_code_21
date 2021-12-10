@@ -2,6 +2,7 @@ mod puzzle_1;
 mod puzzle_2;
 mod puzzle_3;
 mod puzzle_4;
+mod puzzle_5;
 
 fn main() {
     println!("Puzzle 1.1: There are {} instances of increased depth.", 
@@ -20,4 +21,6 @@ fn main() {
              puzzle_4::winning_bingo_score());
     println!("Puzzle 4.2: The loosing bingo board has the score {}",
              puzzle_4::loosing_bingo_score());
+    println!("Puzzle 5.1: The number of points at which lines overlap is {}",
+             puzzle_5::overlapping_line_count());
 }
