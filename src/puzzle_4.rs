@@ -1,5 +1,6 @@
 const INPUT_NUMBERS: &str = include_str!("../data/4/numbers");
 const INPUT_BOARDS: &str = include_str!("../data/4/boards");
+const BOARD_SIZE : usize = 5;
 
 fn parse_numbers(s: &str) -> Vec<u32>
 {
@@ -159,7 +160,7 @@ impl Board {
 pub fn winning_bingo_score() -> u32
 {
     let numbers = parse_numbers(INPUT_NUMBERS);
-    let mut boards = parse_boards(INPUT_BOARDS, (5, 5));
+    let mut boards = parse_boards(INPUT_BOARDS, (BOARD_SIZE, BOARD_SIZE));
     for num in numbers {
         for board in boards.iter_mut() {
             board.check(num);
@@ -171,11 +172,34 @@ pub fn winning_bingo_score() -> u32
     return 0;
 }
 
+fn loosing_score<T>(mut boards: Vec<Board>, numbers: T) -> u32 
+    where T: Iterator<Item=u32>
+{
+    let mut last_score: u32 = 0;
+    for num in numbers {
+        for board in boards.iter_mut() { board.check(num); } // Check number
+        boards = boards.into_iter().filter_map(|mut b| {
+            match b.score() {
+                Some(score) => {
+                    last_score = score; // Store last winning score
+                    None // Filter out winning boards
+                },
+                None => Some(b)
+            }
+        }).collect();
+    }
+    last_score
+}
+
+pub fn loosing_bingo_score() -> u32 {
+    let numbers = parse_numbers(INPUT_NUMBERS);
+    let boards = parse_boards(INPUT_BOARDS, (BOARD_SIZE, BOARD_SIZE));
+    loosing_score(boards, numbers.into_iter())
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
-
-    const BOARD_SIZE : usize = 5;
 
     const EXAMPLE_NUMBERS : &[u32] = &[
         7,4,9,5,11,17,23,2,0,14,21,24,10,16,13,6,15,25,12,22,18,20,8,19,3,26,1
@@ -315,6 +339,16 @@ mod test {
             }
         }
         panic!("No board won");
+    }
+
+    #[test]
+    fn last_win_example() {
+        let mut boards = Vec::<Board>::new();
+        for board_data in EXAMPLE_BOARDS {
+            boards.push(Board::new(board_data, (BOARD_SIZE, BOARD_SIZE)));
+        }
+        let loosing_score = loosing_score(boards, EXAMPLE_NUMBERS[..].iter().copied());
+        assert_eq!(1924, loosing_score);
     }
 
 }

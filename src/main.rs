@@ -18,4 +18,6 @@ fn main() {
              puzzle_3::calculate_life_rating());
     println!("Puzzle 4.1: The winning bingo board has the score {}",
              puzzle_4::winning_bingo_score());
+    println!("Puzzle 4.2: The loosing bingo board has the score {}",
+             puzzle_4::loosing_bingo_score());
 }
