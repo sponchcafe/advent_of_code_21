@@ -3,6 +3,7 @@ mod puzzle_2;
 mod puzzle_3;
 mod puzzle_4;
 mod puzzle_5;
+mod puzzle_6;
 
 fn main() {
     println!("Puzzle 1.1: There are {} instances of increased depth.", 
@@ -25,4 +26,6 @@ fn main() {
              puzzle_5::overlapping_straight_line_count());
     println!("Puzzle 5.2: The number of points at which straight and diagonal lines overlap is {}",
              puzzle_5::overlapping_diagonal_line_count());
+    println!("Puzzle 6.1: After 80 days the number of lanternfish is {}",
+             puzzle_6::lanternfish_population());
 }
