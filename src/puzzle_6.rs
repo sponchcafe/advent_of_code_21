@@ -1,6 +1,6 @@
 const INPUT: &str = include_str!("../data/6/input");
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 struct Fish(u8);
 
 impl Fish {
@@ -18,6 +18,27 @@ impl Fish {
             None
         }
     }
+
+    fn birthdays(self: &Self, start_day: usize) -> Birthdays {
+        Birthdays{
+            next: self.0 as usize + start_day,
+        }
+    }
+}
+
+const GENERATION_TIME: usize = 7;
+
+struct Birthdays{
+    next: usize,
+}
+
+impl Iterator for Birthdays {
+    type Item=usize;
+    fn next(self: &mut Self) -> Option<Self::Item> {
+        let ret = Some(self.next+1);
+        self.next += GENERATION_TIME;
+        ret
+    }
 }
 
 impl From<u8> for Fish {
@@ -26,12 +47,31 @@ impl From<u8> for Fish {
     }
 }
 
-fn simulate_growth(mut fish: Vec::<Fish>, days: u32) -> usize {
+#[allow(unused)]
+fn simulate_growth(mut fish: Vec::<Fish>, days: usize) -> usize {
     for _ in 0..days {
         let new_fish: Vec<Fish> = fish.iter_mut().filter_map(|f| f.grow()).collect();
         fish.extend(new_fish);
     }
     fish.len()
+}
+
+fn calculate_growth(fish: Vec::<Fish>, days: usize) -> usize {
+    let mut births = vec![0; days+1];
+    // Add the fish birth for the initial fish population
+    for f in fish.iter() {
+        for bday in f.birthdays(0).take_while(|i| *i<=days) {
+            births[bday] += 1;
+        }
+    }
+    // Add the fish birth for all the offspring of the initial population day by day
+    for d in 0..days {
+        let fish = Fish::new();
+        for bday in fish.birthdays(d).take_while(|i| *i<=days) {
+            births[bday] += births[d];
+        }
+    }
+    births.iter().sum::<usize>() + fish.len() // Final fish count is sum of all offspring + initial fish
 }
 
 fn parse_input(s: &str) -> Vec<Fish> {
@@ -44,9 +84,9 @@ fn parse_input(s: &str) -> Vec<Fish> {
         .collect()
 }
 
-pub fn lanternfish_population() -> usize {
+pub fn lanternfish_population(days: usize) -> usize {
     let fish = parse_input(INPUT);
-    simulate_growth(fish, 80)
+    calculate_growth(fish, days)
 }
 
 #[cfg(test)]
@@ -77,5 +117,38 @@ mod test {
     fn lanternfish_example_80() {
         let fish = example_fish();
         assert_eq!(5934, simulate_growth(fish, 80));
+    }
+
+    #[test]
+    fn birthdays_from_0() {
+        let fish = Fish::new();
+        let birthdays: Vec::<usize> = fish.birthdays(0).take_while(|i| *i<32).collect();
+        assert_eq!(vec![9, 16, 23, 30], birthdays);
+    }
+
+    #[test]
+    fn birthdays() {
+        let fish = Fish(2);
+        let birthdays: Vec::<usize> = fish.birthdays(25).take_while(|i| *i<50).collect();
+        assert_eq!(vec![28, 35, 42, 49], birthdays);
+    }
+
+    #[test]
+    fn calculate_fish_growth_simple() {
+        let fish = vec![Fish(2), Fish(4)];
+        assert_eq!(5, calculate_growth(fish.clone(), 10));
+        assert_eq!(8, calculate_growth(fish, 15));
+    }
+
+    #[test]
+    fn calculate_fish_growth_80() {
+        let fish = example_fish();
+        assert_eq!(5934, calculate_growth(fish, 80));
+    }
+
+    #[test]
+    fn calculate_fish_growth_256() {
+        let fish = example_fish();
+        assert_eq!(26984457539, calculate_growth(fish, 256));
     }
 }

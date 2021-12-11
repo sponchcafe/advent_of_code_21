@@ -27,5 +27,7 @@ fn main() {
     println!("Puzzle 5.2: The number of points at which straight and diagonal lines overlap is {}",
              puzzle_5::overlapping_diagonal_line_count());
     println!("Puzzle 6.1: After 80 days the number of lanternfish is {}",
-             puzzle_6::lanternfish_population());
+             puzzle_6::lanternfish_population(80));
+    println!("Puzzle 6.2: After 256 days the number of lanternfish is {}",
+             puzzle_6::lanternfish_population(256));
 }
