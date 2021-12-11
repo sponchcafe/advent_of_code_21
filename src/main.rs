@@ -21,6 +21,8 @@ fn main() {
              puzzle_4::winning_bingo_score());
     println!("Puzzle 4.2: The loosing bingo board has the score {}",
              puzzle_4::loosing_bingo_score());
-    println!("Puzzle 5.1: The number of points at which lines overlap is {}",
-             puzzle_5::overlapping_line_count());
+    println!("Puzzle 5.1: The number of points at which straight lines overlap is {}",
+             puzzle_5::overlapping_straight_line_count());
+    println!("Puzzle 5.2: The number of points at which straight and diagonal lines overlap is {}",
+             puzzle_5::overlapping_diagonal_line_count());
 }
