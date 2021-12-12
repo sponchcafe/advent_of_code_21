@@ -4,6 +4,7 @@ mod puzzle_3;
 mod puzzle_4;
 mod puzzle_5;
 mod puzzle_6;
+mod puzzle_7;
 
 fn main() {
     println!("Puzzle 1.1: There are {} instances of increased depth.", 
@@ -30,4 +31,6 @@ fn main() {
              puzzle_6::lanternfish_population(80));
     println!("Puzzle 6.2: After 256 days the number of lanternfish is {}",
              puzzle_6::lanternfish_population(256));
+    println!("Puzzle 7.1: The fuel cost to align the crabs is {}",
+             puzzle_7::align_crabs_cost());
 }
