@@ -33,4 +33,6 @@ fn main() {
              puzzle_6::lanternfish_population(256));
     println!("Puzzle 7.1: The fuel cost to align the crabs is {}",
              puzzle_7::align_crabs_cost());
+    println!("Puzzle 7.2: The fuel cost to align the crabs with linearly increasing fuel cost is {}",
+             puzzle_7::align_crabs_cost_linear());
 }
