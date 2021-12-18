@@ -5,6 +5,7 @@ mod puzzle_4;
 mod puzzle_5;
 mod puzzle_6;
 mod puzzle_7;
+mod puzzle_8;
 
 fn main() {
     println!("Puzzle 1.1: There are {} instances of increased depth.", 
@@ -35,4 +36,7 @@ fn main() {
              puzzle_7::align_crabs_cost());
     println!("Puzzle 7.2: The fuel cost to align the crabs with linearly increasing fuel cost is {}",
              puzzle_7::align_crabs_cost_linear());
+    println!("Puzzle 8.1: The number of digitis that use unique segments (1,4,7,8) is {}",
+             puzzle_8::count_digits_1478());
+
 }
