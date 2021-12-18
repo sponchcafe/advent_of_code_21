@@ -1,7 +1,6 @@
 mod puzzle_1;
 mod puzzle_2;
-mod puzzle_3;
-mod puzzle_4;
+mod puzzle_3; mod puzzle_4;
 mod puzzle_5;
 mod puzzle_6;
 mod puzzle_7;
@@ -38,5 +37,7 @@ fn main() {
              puzzle_7::align_crabs_cost_linear());
     println!("Puzzle 8.1: The number of digitis that use unique segments (1,4,7,8) is {}",
              puzzle_8::count_digits_1478());
+    println!("Puzzle 8.2: The sum of all decoded seven segment digits is {}",
+             puzzle_8::sum_all_decoded_outputs());
 
 }
