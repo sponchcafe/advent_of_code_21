@@ -1,10 +1,12 @@
 mod puzzle_1;
 mod puzzle_2;
-mod puzzle_3; mod puzzle_4;
+mod puzzle_3; 
+mod puzzle_4;
 mod puzzle_5;
 mod puzzle_6;
 mod puzzle_7;
 mod puzzle_8;
+mod puzzle_9;
 
 fn main() {
     println!("Puzzle 1.1: There are {} instances of increased depth.", 
@@ -39,5 +41,7 @@ fn main() {
              puzzle_8::count_digits_1478());
     println!("Puzzle 8.2: The sum of all decoded seven segment digits is {}",
              puzzle_8::sum_all_decoded_outputs());
+    println!("Puzzle 9.1: The sum of all risk levels is {}",
+             puzzle_9::sum_risk_levels());
 
 }
