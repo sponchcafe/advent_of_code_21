@@ -7,6 +7,7 @@ mod puzzle_6;
 mod puzzle_7;
 mod puzzle_8;
 mod puzzle_9;
+mod puzzle_10;
 
 fn main() {
     println!("Puzzle 1.1: There are {} instances of increased depth.", 
@@ -45,5 +46,7 @@ fn main() {
              puzzle_9::sum_risk_levels());
     println!("Puzzle 9.2: The basin risk level is {}",
              puzzle_9::basin_risk_level());
+    println!("Puzzle 10.1: The syntax error score is {}",
+             puzzle_10::syntax_error_score());
 
 }
