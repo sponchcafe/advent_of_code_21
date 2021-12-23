@@ -48,5 +48,7 @@ fn main() {
              puzzle_9::basin_risk_level());
     println!("Puzzle 10.1: The syntax error score is {}",
              puzzle_10::syntax_error_score());
+    println!("Puzzle 10.2: The middle complettion score is {}",
+             puzzle_10::completion_score());
 
 }

@@ -8,8 +8,8 @@ enum Scope { OPEN, CLOSE}
 #[derive(Debug, Clone, PartialEq)]
 enum Class {
     PAREN,
-    CURLY,
     SQUARE,
+    CURLY,
     ANGLE,
 }
 
@@ -56,11 +56,10 @@ impl FromStr for NavLine {
 
 impl NavLine {
 
-    fn errors(self: &Self) -> Vec::<SyntaxError> {
+    fn analyze(self: &Self) -> Result::<TokenStack, SyntaxError> {
         use Scope::*;
 
         let mut stack = TokenStack::new();
-        let mut errors = Vec::<SyntaxError>::new();
 
         for token in self.0.iter() {
             match (stack.peek(), token) {
@@ -69,13 +68,26 @@ impl NavLine {
                         stack.pop(); // Matching scope
                     }
                     else {
-                        errors.push(SyntaxError(class_close.clone())); // Mismatch
+                        return Err(SyntaxError(class_close.clone())); // Mismatch
                     }
                 }
                 _ => { stack.push(token.clone()); }
             }
         }
-        errors
+        Ok(stack.rev())
+    }
+
+    fn error(self: &Self) -> Option::<SyntaxError> {
+        self.analyze().err()
+    }
+
+    fn complete(self: &Self) -> Option<Vec::<Class>> {
+        match self.analyze() {
+            Ok(stack) if !stack.0.is_empty() => { 
+                Some(stack.0.iter().map(|t| t.0.clone()).collect())
+            },
+            _ => { None }
+        }
     }
 }
 
@@ -93,16 +105,33 @@ impl TokenStack {
     fn peek(self: &Self) -> Option<Token> {
         self.0.last().map(Token::to_owned)
     }
+    fn rev(self: Self) -> Self {
+        Self(self.0.into_iter().rev().collect())
+    }
 }
 
 fn score_error(error: &SyntaxError) -> u64 {
     use Class::*;
     match error.0 {
         PAREN => {3}
-        CURLY => {1197}
         SQUARE => {57}
+        CURLY => {1197}
         ANGLE => {25137}
     }
+}
+
+fn score_completion(completion: &Class) -> u64 {
+    use Class::*;
+    match completion {
+        PAREN => {1}
+        SQUARE => {2}
+        CURLY => {3}
+        ANGLE => {4}
+    }
+}
+
+fn score_completions(completion: &Vec::<Class>) -> u64 {
+    completion.iter().fold(0u64, |acc, comp| acc*5 + score_completion(comp))
 }
 
 fn parse_input(s: &str) -> Vec::<NavLine> {
@@ -116,13 +145,27 @@ fn parse_input(s: &str) -> Vec::<NavLine> {
 fn calculate_error_score(data: &Vec::<NavLine>) -> u64 {
     data
         .iter()
-        .filter_map(|navline| navline.errors().get(0).map(SyntaxError::to_owned))
+        .filter_map(NavLine::error)
         .map(|e| score_error(&e))
         .sum()
 }
 
+fn calculate_middle_complete_score(data: &Vec::<NavLine>) -> u64 {
+    let mut completion_scores: Vec<u64> = data
+        .iter()
+        .filter_map(NavLine::complete)
+        .map(|e| score_completions(&e))
+        .collect();
+    completion_scores.sort();
+    completion_scores[completion_scores.len()/2]
+}
+
 pub fn syntax_error_score() -> u64 {
     calculate_error_score(&parse_input(INPUT))
+}
+
+pub fn completion_score() -> u64 {
+    calculate_middle_complete_score(&parse_input(INPUT))
 }
 
 #[cfg(test)]
@@ -181,34 +224,15 @@ mod test {
 
     #[test]
     fn syntax_error() {
-        let navline: NavLine = "()".parse().unwrap();
-        assert!(navline.errors().is_empty());
-
-        let navline: NavLine = "(]".parse().unwrap();
-        assert!(!navline.errors().is_empty());
-
-        let navline: NavLine = "(()]".parse().unwrap();
-        assert!(!navline.errors().is_empty());
-
-        let navline: NavLine = "<([]){()}[{}])".parse().unwrap();
-        assert!(!navline.errors().is_empty());
+        assert!("()".parse::<NavLine>().unwrap().error().is_none());
+        assert_eq!(Some(SyntaxError(SQUARE)), "(]".parse::<NavLine>().unwrap().error());
+        assert_eq!(Some(SyntaxError(SQUARE)), "(()]".parse::<NavLine>().unwrap().error());
+        assert_eq!(Some(SyntaxError(PAREN)), "<([]){()}[{}])".parse::<NavLine>().unwrap().error());
+        assert_eq!(Some(SyntaxError(ANGLE)), "<{([([[(<>()){}]>(<<{{".parse::<NavLine>().unwrap().error());
     }
 
     #[test]
-    fn get_errors() {
-        let navline: NavLine = "()".parse().unwrap();
-        let errors: Vec::<SyntaxError> = Vec::new();
-        assert_eq!(errors, navline.errors());
-
-        let navline: NavLine = "(]".parse().unwrap();
-        assert_eq!(vec![SyntaxError(SQUARE)], navline.errors());
-
-        let navline: NavLine = "<{([([[(<>()){}]>(<<{{".parse().unwrap();
-        assert_eq!(vec![SyntaxError(ANGLE)], navline.errors());
-    }
-
-    #[test]
-    fn scoring() {
+    fn error_scoring() {
         let errors = vec![
             SyntaxError(PAREN),  // 3
             SyntaxError(SQUARE), // 57
@@ -216,21 +240,46 @@ mod test {
             SyntaxError(ANGLE),  // 25137
             SyntaxError(PAREN),  // 3
         ];                       // 26397
-
         assert_eq!(26397u64, errors.iter().map(score_error).sum());
     }
 
     #[test]
-    fn example_score() {
+    fn example_error_score() {
         let input = parse_input(EXAMPLE);
         assert_eq!(26397u64, calculate_error_score(&input));
     }
 
-
     #[test]
-    fn solution_score() {
+    fn solution_error_score() {
         let input = parse_input(INPUT);
         assert_eq!(316851u64, calculate_error_score(&input));
     }
 
+    #[test]
+    fn complete_line() {
+        assert!("".parse::<NavLine>().unwrap().complete().is_none());
+        assert_eq!(Some(vec![PAREN]), "(".parse::<NavLine>().unwrap().complete());
+        assert_eq!(Some(vec![CURLY, PAREN, PAREN]), "(<>[](<{}>{".parse::<NavLine>().unwrap().complete());
+    }
+
+    #[test]
+    fn completion_scoring() { 
+
+        fn from_str(s: &str) -> Vec::<Class> {
+            s.parse::<NavLine>().unwrap().0.into_iter().map(|t| t.0).collect()
+        }
+
+        assert_eq!(288957u64,   score_completions(&from_str("}}]])})]")));
+        assert_eq!(5566,        score_completions(&from_str(")}>]})")));
+        assert_eq!(1480781,     score_completions(&from_str("}}>}>))))")));
+        assert_eq!(995444,      score_completions(&from_str("]]}}]}]}>")));
+        assert_eq!(294,         score_completions(&from_str("])}>")));
+    }
+
+    #[test]
+    fn example_complete_score() {
+        let input = parse_input(EXAMPLE);
+        assert_eq!(288957u64, calculate_middle_complete_score(&input));
+    }
+    
 }
