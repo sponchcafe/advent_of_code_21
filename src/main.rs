@@ -43,5 +43,7 @@ fn main() {
              puzzle_8::sum_all_decoded_outputs());
     println!("Puzzle 9.1: The sum of all risk levels is {}",
              puzzle_9::sum_risk_levels());
+    println!("Puzzle 9.2: The basin risk level is {}",
+             puzzle_9::basin_risk_level());
 
 }
