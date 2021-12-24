@@ -8,6 +8,7 @@ mod puzzle_7;
 mod puzzle_8;
 mod puzzle_9;
 mod puzzle_10;
+mod puzzle_11;
 
 fn main() {
     println!("Puzzle 1.1: There are {} instances of increased depth.", 
@@ -50,5 +51,7 @@ fn main() {
              puzzle_10::syntax_error_score());
     println!("Puzzle 10.2: The middle complettion score is {}",
              puzzle_10::completion_score());
+    println!("Puzzle 11.1: After 100 steps, the number of octupus flashes is {}",
+             puzzle_11::octopus_flashes());
 
 }
