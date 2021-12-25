@@ -53,5 +53,7 @@ fn main() {
              puzzle_10::completion_score());
     println!("Puzzle 11.1: After 100 steps, the number of octupus flashes is {}",
              puzzle_11::octopus_flashes());
+    println!("Puzzle 11.2: All octupus flashes are in sync after {} steps.",
+             puzzle_11::octopus_sync_flashes());
 
 }

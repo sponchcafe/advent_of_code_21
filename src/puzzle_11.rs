@@ -128,6 +128,15 @@ impl OctoMap {
         }
         all_flashers.len() as u64
     }
+
+    fn get_first_sync_flash(self: &mut Self) -> u64 {
+        let mut steps = 0;
+        loop {
+            steps += 1;
+            if self.step() as usize == self.data.len() { break; }
+        }
+        steps
+    }
 }
 
 
@@ -136,6 +145,10 @@ pub fn octopus_flashes() -> u64 {
     (0u8..100).map(|_| octo.step()).sum()
 }
 
+pub fn octopus_sync_flashes() -> u64 {
+    let mut octo: OctoMap = INPUT.parse().unwrap();
+    octo.get_first_sync_flash()
+}
 
 
 #[cfg(test)]
@@ -220,6 +233,12 @@ mod test {
         let mut octo: OctoMap = INPUT.parse().unwrap();
         let total_flashes: u64 = (0u8..100).map(|_| octo.step()).sum();
         assert_eq!(1700, total_flashes);
+    }
+
+    #[test]
+    fn sync_flash_example() {
+        let mut octo: OctoMap = EXAMPLE.parse().unwrap();
+        assert_eq!(195, octo.get_first_sync_flash());
     }
 }
 
