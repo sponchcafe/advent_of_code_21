@@ -58,5 +58,7 @@ fn main() {
              puzzle_11::octopus_sync_flashes());
     println!("Puzzle 12.1: The number of paths from start to end is {}", 
              puzzle_12::number_of_paths());
+    println!("Puzzle 12.2: The number of paths from start to end with one double visit is {}", 
+             puzzle_12::number_of_paths_double_visit());
 
 }

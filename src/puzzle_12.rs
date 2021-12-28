@@ -1,9 +1,11 @@
 use std::str::FromStr;
 use std::collections::HashSet;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 
 const INPUT: &str = include_str!("../data/12/input");
 
-type ID = String;
+type ID = u64;
 type Set<T> = HashSet<T>;
 
 #[derive(Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Clone)]
@@ -34,10 +36,16 @@ impl FromStr for Cave{
         if id.is_empty() { Err(()) }
         else if id == "start" { Ok(Cave::Start) }
         else if id == "end" { Ok(Cave::End) }
-        else if id.chars().all(|c| c.is_uppercase()) { Ok(Cave::Large(id.into())) }
-        else if id.chars().all(|c| c.is_lowercase()) { Ok(Cave::Small(id.into())) }
+        else if id.chars().all(|c| c.is_uppercase()) { Ok(Cave::Large(hash(id))) }
+        else if id.chars().all(|c| c.is_lowercase()) { Ok(Cave::Small(hash(id))) }
         else { Err(()) }
     }
+}
+
+fn hash(s: &str) -> u64 {
+    let mut hasher = DefaultHasher::new();
+    s.hash(&mut hasher);
+    hasher.finish()
 }
 
 impl FromStr for Tunnel {
@@ -85,7 +93,7 @@ impl CaveMap {
         caves
     }
 
-    fn count_paths(self: &Self) -> u64 {
+    fn count_paths(self: &Self, validator: fn(&Path) -> bool) -> u64 {
         let mut paths = vec![Path(vec![Cave::Start])];
         let mut count = 0u64;
         loop {
@@ -97,7 +105,7 @@ impl CaveMap {
                     let n = extend(p, connected);
                     n
                 })
-                .filter(|p| p.valid())
+                .filter(validator)
                 .collect();
             if paths.is_empty() { break; }
             count += paths.iter().filter(|p| p.complete()).count() as u64;
@@ -112,18 +120,29 @@ impl Path {
         self.0.last() == Some(&Cave::End)
     }
 
-    fn valid(self: &Self) -> bool {
-        !self._double_visit_small() &&
-        !self._double_stay() &&
-        !self._multi_start()
+    fn single_visit_validator(p: &Path) -> bool {
+        p._double_visits() == 0 &&
+        !p._double_stay() &&
+        !p._multi_start()
     }
 
-    fn _double_visit_small(self: &Self) -> bool {
-        let small_caves: Vec<String> = self.0.iter().filter_map(|c| match c {
-            Cave::Small(id) => Some(id.clone()),
-            _ => None
-        }).collect();
-        small_caves.len() != small_caves.into_iter().collect::<Set<_>>().len()
+    fn double_visit_validator(p: &Path) -> bool {
+        p._double_visits() < 2 &&
+        !p._double_stay() &&
+        !p._multi_start()
+    }
+
+    fn _double_visits(self: &Self) -> usize {
+        let small_caves: Vec<ID> = self.0
+            .iter()
+            .filter_map(
+                |c| match c {
+                    Cave::Small(id) => Some(id.clone()),
+                    _ => None
+                }
+            )
+            .collect();
+        small_caves.len() - small_caves.into_iter().collect::<Set<_>>().len()
     }
 
     fn _double_stay(self: &Self) -> bool {
@@ -163,7 +182,11 @@ fn parse_input(s: &str) -> CaveMap {
 }
 
 pub fn number_of_paths() -> u64 {
-    parse_input(INPUT).count_paths()
+    parse_input(INPUT).count_paths(Path::single_visit_validator)
+}
+
+pub fn number_of_paths_double_visit() -> u64 {
+    parse_input(INPUT).count_paths(Path::double_visit_validator)
 }
 
 
@@ -180,15 +203,15 @@ mod test {
     fn parse_cave() {
         assert_eq!(Cave::Start, "start".parse::<Cave>().unwrap());
         assert_eq!(Cave::End, "end".parse::<Cave>().unwrap());
-        assert_eq!(Cave::Small("a".into()), "a".parse::<Cave>().unwrap());
-        assert_eq!(Cave::Large("A".into()), "A".parse::<Cave>().unwrap());
+        assert_eq!(Cave::Small(hash("a")), "a".parse::<Cave>().unwrap());
+        assert_eq!(Cave::Large(hash("A")), "A".parse::<Cave>().unwrap());
     }
 
     #[test]
     fn parse_path() {
         let path: Tunnel = "a-B".parse().unwrap();
-        assert_eq!(Cave::Small("a".into()), path.from);
-        assert_eq!(Cave::Large("B".into()), path.to);
+        assert_eq!(Cave::Small(hash("a")), path.from);
+        assert_eq!(Cave::Large(hash("B")), path.to);
     }
 
     #[test]
@@ -205,8 +228,8 @@ mod test {
     fn cave_map_from_iter() {
         let mut paths = Vec::<Tunnel>::new();
         paths.push(Tunnel{
-            from: Cave::Small("a".into()),
-            to: Cave::Small("b".into()),
+            from: Cave::Small(hash("a")),
+            to: Cave::Small(hash("b")),
         });
         let map: CaveMap = paths.into_iter().collect();
         assert_eq!(2, CaveMap::caves(map.tunnels.iter()).iter().count());
@@ -216,8 +239,8 @@ mod test {
     fn connected_caves() {
         let map = parse_input(EX1);
         assert_eq!(2, map.connected(&Cave::Start).len());
-        assert_eq!(4, map.connected(&Cave::Large("A".into())).len());
-        assert_eq!(1, map.connected(&Cave::Small("d".into())).len());
+        assert_eq!(4, map.connected(&Cave::Large(hash("A"))).len());
+        assert_eq!(1, map.connected(&Cave::Small(hash("d"))).len());
     }
 
     #[test]
@@ -225,58 +248,67 @@ mod test {
         assert_eq!(false, Path(vec![]).complete());
         assert_eq!(false, Path(vec![Cave::Start]).complete());
         assert_eq!(true, Path(vec![Cave::Start, Cave::End]).complete());
-        assert_eq!(true, Path(vec![Cave::Start, Cave::Small("a".into()), Cave::End]).complete());
+        assert_eq!(true, Path(vec![Cave::Start, Cave::Small(0), Cave::End]).complete());
     }
 
     #[test]
     fn path_is_valid() {
-        assert_eq!(true, Path(vec![]).valid());
-        assert_eq!(true, Path(vec![Cave::Start]).valid());
-        assert_eq!(true, Path(vec![Cave::Start, Cave::End]).valid());
-        assert_eq!(true, Path(vec![Cave::Start, Cave::Small("a".into()), Cave::End]).valid());
-        assert_eq!(true, Path(vec![
+        let valid_paths = vec![
+            Path(vec![]),
+            Path(vec![Cave::Start]),
+            Path(vec![Cave::Start, Cave::End]),
+            Path(vec![Cave::Start, Cave::Small(hash("a")), Cave::End]),
+            Path(vec![
                 Cave::Start,
-                Cave::Large("A".into()),
-                Cave::Small("b".into()),
-                Cave::Large("A".into()),
+                Cave::Large(0),
+                Cave::Small(1),
+                Cave::Large(0),
                 Cave::End,
-        ]).valid());
+            ])
+        ];
+        assert!(valid_paths.iter().all(Path::single_visit_validator));
     }
 
     #[test]
     fn path_invalid_mutliple_visits_small() {
-        assert_eq!(false, Path(vec![
+        assert_eq!(false, Path::single_visit_validator(
+            &Path(vec![
                 Cave::Start,
-                Cave::Small("a".into()),
-                Cave::Small("b".into()),
-                Cave::Small("a".into()),
-        ]).valid());
+                Cave::Small(0),
+                Cave::Small(1),
+                Cave::Small(0),
+            ])
+        ));
     }
 
     #[test]
     fn path_invalid_stay_in_one_cave() {
-        assert_eq!(false, Path(vec![
+        assert_eq!(false, Path::single_visit_validator(
+            &Path(vec![
                 Cave::Start,
-                Cave::Large("A".into()),
-                Cave::Large("A".into()),
+                Cave::Large(0),
+                Cave::Large(0),
                 Cave::End,
-        ]).valid());
+            ])
+        ));
     }
 
     #[test]
     fn path_invalid_multi_start() {
-        assert_eq!(false, Path(vec![
+        assert_eq!(false, Path::single_visit_validator(
+            &Path(vec![
                 Cave::Start,
-                Cave::Small("a".into()),
+                Cave::Small(0),
                 Cave::Start,
                 Cave::End,
-        ]).valid());
+            ])
+        ));
     }
 
     #[test]
     fn extend_path() {
         let path = Path(vec![Cave::Start]);
-        let connected = [Cave::Small("a".into()), Cave::Large("B".into()), Cave::End].into_iter().collect::<Set<_>>();
+        let connected = [Cave::Small(0), Cave::Large(1), Cave::End].into_iter().collect::<Set<_>>();
         let paths = extend(path, connected);
         assert_eq!(3, paths.len());
         assert_eq!(2, paths[0].0.len());
@@ -284,22 +316,27 @@ mod test {
 
     #[test]
     fn example_1() {
-        assert_eq!(10, parse_input(EX1).count_paths());
+        assert_eq!(10, parse_input(EX1).count_paths(Path::single_visit_validator));
+        assert_eq!(36, parse_input(EX1).count_paths(Path::double_visit_validator));
     }
 
     #[test]
     fn example_2() {
-        assert_eq!(19, parse_input(EX2).count_paths());
+        assert_eq!(19, parse_input(EX2).count_paths(Path::single_visit_validator));
+        assert_eq!(103, parse_input(EX2).count_paths(Path::double_visit_validator));
     }
 
     #[test]
     fn example_3() {
-        assert_eq!(226, parse_input(EX3).count_paths());
+        assert_eq!(226, parse_input(EX3).count_paths(Path::single_visit_validator));
+        assert_eq!(3509, parse_input(EX3).count_paths(Path::double_visit_validator));
     }
 
-    #[test]
-    fn solution_1() {
-        assert_eq!(4495, parse_input(INPUT).count_paths());
+    #[allow(unused)]
+    //#[test] // Takes too long to run all the time :(
+    fn solution() {
+        assert_eq!(4495, parse_input(INPUT).count_paths(Path::single_visit_validator));
+        assert_eq!(131254, parse_input(INPUT).count_paths(Path::double_visit_validator));
     }
 
 }
