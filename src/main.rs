@@ -9,6 +9,7 @@ mod puzzle_8;
 mod puzzle_9;
 mod puzzle_10;
 mod puzzle_11;
+mod puzzle_12;
 
 fn main() {
     println!("Puzzle 1.1: There are {} instances of increased depth.", 
@@ -55,5 +56,7 @@ fn main() {
              puzzle_11::octopus_flashes());
     println!("Puzzle 11.2: All octupus flashes are in sync after {} steps.",
              puzzle_11::octopus_sync_flashes());
+    println!("Puzzle 12.1: The number of paths from start to end is {}", 
+             puzzle_12::number_of_paths());
 
 }
