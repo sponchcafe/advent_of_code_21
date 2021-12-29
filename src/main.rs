@@ -63,5 +63,7 @@ fn main() {
              puzzle_12::number_of_paths_double_visit());
     println!("Puzzle 13.1: After one fold the number of visible dots is {}",
              puzzle_13::dots_after_one_fold());
+    println!("Puzzle 13.2: The infrared system activation code is:\n{}",
+             puzzle_13::fold_and_format_dots());
 
 }

@@ -74,6 +74,27 @@ impl Dots {
     }
 }
 
+impl ToString for Dots {
+    fn to_string(self: &Self) -> String {
+        let dots = &self.0;
+        let max_x = dots.iter().map(|d| d.0).max().unwrap() as usize;
+        let max_y = dots.iter().map(|d| d.1).max().unwrap() as usize;
+        let mut display = String::with_capacity((max_x+1)*max_y);
+        for y in 0..=max_y {
+            for x in 0..=max_x {
+                if dots.contains(&Dot(x as i32,y as i32)) {
+                    display.push('#');
+                }
+                else {
+                    display.push(' ');
+                }
+            }
+            display.push('\n');
+        }
+        display
+    }
+}
+
 fn parse_dots(s: &str) -> Dots
 {
     s
@@ -109,6 +130,13 @@ pub fn dots_after_one_fold() -> u64 {
     let folds: Vec<Fold> = parse_folds(FOLDS);
     dots = dots.fold(folds.into_iter().take(1));
     dots.len() as u64
+}
+
+pub fn fold_and_format_dots() -> String {
+    let dots: Dots = parse_dots(DOTS);
+    let folds: Vec<Fold> = parse_folds(FOLDS);
+    let dots = dots.fold(folds.into_iter());
+    dots.to_string()
 }
 
 #[cfg(test)]
