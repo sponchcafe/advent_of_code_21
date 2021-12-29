@@ -10,6 +10,7 @@ mod puzzle_9;
 mod puzzle_10;
 mod puzzle_11;
 mod puzzle_12;
+mod puzzle_13;
 
 fn main() {
     println!("Puzzle 1.1: There are {} instances of increased depth.", 
@@ -60,5 +61,7 @@ fn main() {
              puzzle_12::number_of_paths());
     println!("Puzzle 12.2: The number of paths from start to end with one double visit is {}", 
              puzzle_12::number_of_paths_double_visit());
+    println!("Puzzle 13.1: After one fold the number of visible dots is {}",
+             puzzle_13::dots_after_one_fold());
 
 }
