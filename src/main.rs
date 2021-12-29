@@ -11,6 +11,7 @@ mod puzzle_10;
 mod puzzle_11;
 mod puzzle_12;
 mod puzzle_13;
+mod puzzle_14;
 
 fn main() {
     println!("Puzzle 1.1: There are {} instances of increased depth.", 
@@ -65,5 +66,7 @@ fn main() {
              puzzle_13::dots_after_one_fold());
     println!("Puzzle 13.2: The infrared system activation code is:\n{}",
              puzzle_13::fold_and_format_dots());
+    println!("Puzzle 14.1: The difference between the number of the most and least common polymer element is {}",
+             puzzle_14::polymer_index());
 
 }
