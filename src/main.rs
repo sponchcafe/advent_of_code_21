@@ -66,7 +66,9 @@ fn main() {
              puzzle_13::dots_after_one_fold());
     println!("Puzzle 13.2: The infrared system activation code is:\n{}",
              puzzle_13::fold_and_format_dots());
-    println!("Puzzle 14.1: The difference between the number of the most and least common polymer element is {}",
-             puzzle_14::polymer_index());
+    println!("Puzzle 14.1: The difference between the number of the most and least common polymer element after 10 steps is {}",
+             puzzle_14::polymer_index(10));
+    println!("Puzzle 14.2: The difference between the number of the most and least common polymer element after 40 steps is {}",
+             puzzle_14::polymer_index(40));
 
 }

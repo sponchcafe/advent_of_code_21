@@ -8,20 +8,25 @@ const RULES: &str = include_str!("../data/14/rules");
 type Pair = (char, char);
 
 #[derive(Debug, PartialEq)]
-enum Applied { Pair(char, char), Triple(char, char, char)}
-
-#[derive(Debug, PartialEq)]
 struct Rule {
-    pair: Pair,
-    insert: char
+    input: Pair,
+    output: (Pair, Pair),
 }
 
-#[derive(Debug)]
-struct Rules ( HashMap<Pair, char>);
+struct Rules ( HashMap<Pair, (Pair, Pair)> );
+
+#[derive(Debug, Default)]
+struct Polymer{ 
+    initial: String,
+    pair_counts: HashMap<Pair, usize>,
+}
 
 impl Rule {
-    fn new(pair: (char, char), insert: char) -> Self {
-        Rule{pair, insert}
+    fn new(input: (char, char), insert: char) -> Self {
+        Rule{
+            input,
+            output: ((input.0, insert), (insert, input.1))
+        }
     }
 }
 
@@ -36,7 +41,7 @@ impl FromStr for Rule {
         match (parts.next(), parts.next(), parts.next()) {
             (Some(pair), Some(insert), None) => {
                 let mut p = pair.chars();
-                let pair = match (p.next(), p.next(), p.next()) {
+                let input = match (p.next(), p.next(), p.next()) {
                     (Some(a), Some(b), None) =>  { Ok( (a, b) ) }
                     _ => { Err(()) }
                 };
@@ -45,7 +50,7 @@ impl FromStr for Rule {
                     (Some(i),  None) =>  { Ok( i ) }
                     _ => { Err(()) }
                 };
-                Ok(Rule::new(pair?, insert?))
+                Ok(Rule::new(input?, insert?))
             },
             _ => { Err(()) } 
         }
@@ -56,8 +61,8 @@ impl FromIterator<Rule> for Rules {
     fn from_iter<T: IntoIterator<Item=Rule>>(iter: T) -> Rules {
         Rules(
             iter.into_iter()
-                .map(|rule| (rule.pair, rule.insert))
-                .collect::<HashMap<Pair, char>>()
+                .map(|rule| (rule.input, rule.output)) 
+                .collect::<HashMap<Pair, (Pair, Pair)>>()
         )
     }
 }
@@ -72,28 +77,6 @@ fn parse_rules(s: &str) -> Rules {
         .collect()
 }
 
-impl Rules {
-    fn apply(self: &Self, pair: Pair) -> Applied {
-        match self.0.get(&pair) {
-            Some(insert) => { Applied::Triple(pair.0, *insert, pair.1) }
-            None => { Applied::Pair(pair.0, pair.1) }
-        }
-    }
-}
-
-fn push_applied(s: &mut String, app: Applied) {
-    match app {
-        Applied::Pair(a, b) if s.len() == 0 => { s.push(a); s.push(b); }
-        Applied::Triple(a, b, c) if s.len() == 0 => { s.push(a); s.push(b); s.push(c); }
-        Applied::Pair(_, b) => { 
-            s.push(b); 
-        }
-        Applied::Triple(_, b, c) => { 
-            s.push(b); s.push(c); 
-        }
-    }
-}
-
 struct Pairs<'a> ( std::iter::Peekable<std::str::Chars<'a>> );
 
 impl<'a> Iterator for Pairs<'a> {
@@ -106,16 +89,79 @@ impl<'a> Iterator for Pairs<'a> {
     }
 }
 
-fn pairs<'a> (s: &'a str) -> Pairs<'a> {
-    Pairs(s.chars().peekable())
+impl Polymer {
+
+    fn new(s: &str) -> Self {
+        let mut pair_counts = HashMap::<Pair, usize>::new();
+        pairs(s)
+            .for_each(|p|
+                match pair_counts.get_mut(&p) {
+                    Some(c) => { *c += 1; },
+                    None => { pair_counts.insert(p, 1); }
+                }
+            );
+        Self{pair_counts, initial: s.into()}
+    }
+
+    fn update(self: &mut Self, k: Pair, val: isize) {
+        let mut new_val = match self.pair_counts.get_mut(&k) {
+            Some(c) => { *c as isize + val }
+            None => { val }
+        };
+        if new_val < 0 { new_val = 0; }
+        self.pair_counts.insert(k, new_val as usize);
+    }
+
+    fn polymerize(self: &mut Self, rules: &Rules, steps: usize) {
+        for _ in 0..steps {
+            let mut next = Polymer::default();
+            next.initial = self.initial.clone();
+            for (p0, v) in self.pair_counts.iter() {
+               match rules.0.get(p0) {
+                   Some((p1, p2)) => {
+                       next.update(*p1, *v as isize);
+                       next.update(*p2, *v as isize);
+                   },
+                   None => {
+                       next.update(*p0, *v as isize);
+                   }
+               }
+            }
+            *self = next;
+        }
+    }
+
+    fn start(self: &Self) -> char {
+        self.initial.chars().next().expect("Non empty initial polymer")
+    }
+
+    fn end(self: &Self) -> char {
+        self.initial.chars().last().expect("Non empty initial polymer")
+    }
+
+    fn counts(self: &Self) -> ElementCounts {
+        let mut counts = ElementCounts::new();
+        for (k, v) in self.pair_counts.iter() {
+            counts.update(k.0, *v as isize);
+            counts.update(k.1, *v as isize);
+        }
+        for v in counts.0.values_mut() { *v /= 2; }
+        counts.update(self.start(), 1);
+        counts.update(self.end(), 1);
+        counts
+    }
 }
 
-fn polymerize(s: String, r: &Rules) -> String {
-    let mut polymerized = String::with_capacity(s.len()*2);
-    pairs(&s)
-        .map(|pair| r.apply(pair))
-        .for_each(|app| push_applied(&mut polymerized, app));
-    polymerized
+impl<T> From<T> for Polymer 
+    where T: AsRef<str>
+{
+    fn from(s: T) -> Self {
+        Polymer::new(s.as_ref())
+    }
+}
+
+fn pairs<'a> (s: &'a str) -> Pairs<'a> {
+    Pairs(s.chars().peekable())
 }
 
 #[derive(Debug)]
@@ -131,18 +177,18 @@ impl Index<char> for ElementCounts {
     }
 }
 
-fn count_elements(s: &str) -> ElementCounts {
-    let mut map = HashMap::<char, usize>::new();
-    for c in s.chars() {
-        match map.get_mut(&c) {
-            Some(count) => { *count += 1; }
-            None => { map.insert(c, 1); }
-        }
-    }
-    ElementCounts(map)
-}
-
 impl ElementCounts{
+    fn new() -> Self {
+        Self(HashMap::<char, usize>::new())
+    }
+    fn update(self: &mut Self, k: char, val: isize) {
+        let mut new_val = match self.0.get_mut(&k) {
+            Some(c) => { *c as isize + val }
+            None => { val }
+        };
+        if new_val < 0 { new_val = 0; }
+        self.0.insert(k, new_val as usize);
+    }
     fn max(self: &Self) -> usize {
         *self.0.iter().map(|(_, v)| v).max().unwrap_or(&0)
     }
@@ -151,11 +197,11 @@ impl ElementCounts{
     }
 }
 
-pub fn polymer_index() -> u64 {
-    let mut s = String::from(POLYMER.trim());
-    let r = parse_rules(RULES);
-    for _ in 0..10 { s = polymerize(s, &r); }
-    let counts = count_elements(&s);
+pub fn polymer_index(steps: usize) -> u64 {
+    let mut polymer = Polymer::from(POLYMER.trim());
+    let rules = parse_rules(RULES);
+    polymer.polymerize(&rules, steps);
+    let counts = polymer.counts();
     (counts.max()-counts.min()) as u64
 }
 
@@ -175,21 +221,6 @@ mod test {
     }
     
     #[test]
-    fn apply_rules() {
-        let rules: Rules = [Rule::new(('A', 'B'), 'C')].into_iter().collect();
-        assert_eq!(Applied::Triple('A', 'C', 'B'), rules.apply(('A', 'B')));
-        assert_eq!(Applied::Pair('A', 'C'), rules.apply(('A', 'C')));
-    }
-    
-    #[test]
-    fn push_applied_to_string() {
-        let mut s = String::with_capacity(10);
-        push_applied(&mut s, Applied::Triple('A', 'B', 'C'));
-        push_applied(&mut s, Applied::Pair('C', 'D'));
-        assert_eq!("ABCD".to_string(), s);
-    }
-
-    #[test]
     fn generate_pairs() {
         let s = "ABCDE";
         let pairs: Vec<Pair> = pairs(s).collect();
@@ -197,35 +228,52 @@ mod test {
         assert_eq!(vec![('A','B'),('B','C'),('C','D'),('D','E')], pairs);
     }
 
-    #[test]
-    fn test_polymerize() {
-        let s = String::from("ABC");
-        let rules: Rules = [Rule::new(('A', 'B'), 'C')].into_iter().collect();
-        let s = polymerize(s, &rules);
-        assert_eq!(String::from("ACBC"), s);
+    fn test_rules() -> Rules {
+        [Rule::new(('A', 'B'), 'C')].into_iter().collect()
     }
 
     #[test]
     fn test_count_elements() {
-        let s = String::from("ABCDEFABC");
-        let counts = count_elements(&s);
-        assert_eq!(counts['A'], 2);
-        assert_eq!(counts['B'], 2);
-        assert_eq!(counts['C'], 2);
-        assert_eq!(counts['D'], 1);
-        assert_eq!(counts['E'], 1);
-        assert_eq!(counts['F'], 1);
-        assert_eq!(counts['G'], 0);
+        let polymer = Polymer::from("ABC");
+        let counts = polymer.counts();
+        assert_eq!(1, counts['A']);
+        assert_eq!(1, counts['B']);
+        assert_eq!(1, counts['C']);
+        assert_eq!(0, counts['D']);
+    }
+
+    #[test]
+    fn test_polymerize_no_step() {
+        let mut polymer = Polymer::from("ABC");
+        let rules = test_rules();
+        polymer.polymerize(&rules, 0);
+        let counts = polymer.counts();
+        assert_eq!(1, counts['A']);
+        assert_eq!(1, counts['B']);
+        assert_eq!(1, counts['C']);
+        assert_eq!(0, counts['D']);
+    }
+
+    #[test]
+    fn test_polymerize() {
+        let mut polymer = Polymer::from("ABC");
+        let rules = test_rules();
+        polymer.polymerize(&rules, 1);
+        let counts = polymer.counts();
+        assert_eq!(1, counts['A']);
+        assert_eq!(1, counts['B']);
+        assert_eq!(2, counts['C']);
+        assert_eq!(0, counts['D']);
     }
 
     const EX_RULES: &str = include_str!("../data/14/example_rules");
 
     #[test]
     fn test_example() {
-        let mut s = String::from("NNCB");
-        let r = parse_rules(EX_RULES);
-        for _ in 0..10 { s = polymerize(s, &r); }
-        let counts = count_elements(&s);
+        let mut polymer = Polymer::from("NNCB");
+        let rules = parse_rules(EX_RULES);
+        polymer.polymerize(&rules, 10);
+        let counts = polymer.counts();
         assert_eq!(1588, counts.max()-counts.min());
     }
 
